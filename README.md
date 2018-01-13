@@ -1,2 +1,2 @@
-# presentations
-Slides and notes I can share publicly.
+# Presentations
+A repo that contains slides and notes I can share publicly.
