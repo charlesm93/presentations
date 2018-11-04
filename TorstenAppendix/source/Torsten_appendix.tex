@@ -140,7 +140,7 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
   and provides several inference algorithms to fit these models \cite{Stan:2017}.
   It also comes with a suite of packages to diagnose these models
   and construct robust frameworks for Bayesian modeling (see for example
-  \cite{Gabry:2017}).
+  \cite{Gabry:2017} and \cite{Betancourt:2018}).
   Our goal is to make \texttt{Stan} more accessible to modelers in Pharmacometrics,
   and our efforts are two fold:
   \begin{enumerate}
@@ -182,7 +182,7 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
   \subsection{Hamiltonian Monte Carlo sampling}
   
   We only do a quick review. More detailed and excellent treatments of the subject 
-  include \cite{Radford:2010} and \cite{Betancourt:2017}.
+  include \cite{Betancourt:2017} and  \cite{Radford:2010}.
   Note that in practice, there are many tuning parameters required to make HMC work effectively.
   NUTS alleviates this burden by adaptively tuning the parameters during a warm-up phase of the
   model fitting process.
@@ -205,12 +205,39 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
   up. We replicate this behavior by applying the laws of classical mechanics, elegantly 
   described by Hamilton's equations.
   
-  Under these circumstances, the chain takes ``bigger steps'' when the posterior density increases, 
-  but smaller ones when it moves towards regions of lower probability density. This results in several
-  desirable properties, that allow the chain to efficiently explore the \textit{typical set}, i.e the region 
-  where the vast majority of the probability mass concentrates.
+  Under these circumstances, the chain accelerates when the posterior density increases,
+  but slows down when it moves towards regions with a lower probability density.
+  This results in several desirables properties, that allow the chain
+  to efficiently explore the \textit{typical set}, i.e. the region where the vast majority of the probability
+  mass concentrates.
   The latter phenomenon is termed \textit{concentration of measure} and becomes extremely acute
   as we get to high dimensions.
+  
+  As an illustrative example, imagine a multivariate Gaussian density in high dimensions. 
+  The resulting density distribution is spherically symmetric, and is sometimes termed a Gaussian
+  hypersphere.
+  %
+  The probability density is highest at the center and decreases as we move away.
+  Consider however the various shells in our hypersphere and
+  note the volume of these shells increases as we move away.
+  Specifically, in $n$ dimensions, the volume of each shell scales with $r^{n-1}$, where $r$ is the distance
+  from the center at which the shell is located (to see this, think about the problem in spherical coordinates).
+  Now which shells contain the most probability mass? 
+  Evidently, there is a tension between probability density and differential volume. 
+  %
+  Moreover, for high $n$, most of the probability mass concentrates, \textit{not} at the center,
+  but around shells neither too far, nor too close from the center.
+  To efficiently sample the posterior, we therefore want the chain to mostly explore these shells,
+  which constitute the typical set.
+  That is we want to simulate trajectories along certain \textit{orbits}.
+  This is exactlt what the mathematics of Hamiltonian mechanics allow us to compute!
+
+%  Under these circumstances, the chain takes ``bigger steps'' when the posterior density increases, 
+%  but smaller ones when it moves towards regions of lower probability density. This results in several
+%  desirable properties, that allow the chain to efficiently explore the \textit{typical set}, i.e the region 
+%  where the vast majority of the probability mass concentrates.
+%  The latter phenomenon is termed \textit{concentration of measure} and becomes extremely acute
+%  as we get to high dimensions.
   
   When applying Hamilton's equations to our MCMC problem, we can show the $j^{th}$ 
   component of the chain's momentum, $p$, varies as the negative partial derivative of 
@@ -246,6 +273,12 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
   \end{eqnarray*}
   %
   where $K$ is a constant that does not depend on $\theta$.
+  
+  We conclude this section by noting one constraint we face when using HMC: the posterior distribution 
+  needs to be continuous. While discontinuities are not precluded by Hamiltonian mechanics,
+  they do, for rather subtle reasons, prevent the
+  chain from exploring the parameter space\footnote{For a discussion on the subject,
+  see \\ \url{https://discourse.mc-stan.org/t/non-smooth-posterior-and-kkt-problem/6281}.}. 
   
   \subsection{Automatic differentiation}
 
