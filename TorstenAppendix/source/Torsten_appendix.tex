@@ -203,7 +203,7 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
   we observe when a ball rolls on a hill under the influence of gravity: it accelerates when
   it rolls down (i.e as the gravitational potential weakens), but looses speed when it goes
   up. We replicate this behavior by applying the laws of classical mechanics, elegantly 
-  described by Hamilton's equations.
+  described by Hamilton's equations of motion.
   
   Under these circumstances, the chain accelerates when the posterior density increases,
   but slows down when it moves towards regions with a lower probability density.
@@ -211,27 +211,35 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
   to efficiently explore the \textit{typical set}, i.e. the region where the vast majority of the probability
   mass concentrates.
   The latter phenomenon is termed \textit{concentration of measure} and becomes extremely acute
-  as we get to high dimensions.
+  when we get to high dimensions.
   
   As an illustrative example, imagine a multivariate Gaussian density in high dimensions. 
-  The resulting density distribution is spherically symmetric, and is sometimes termed a Gaussian
+  The corresponding probability density function is spherically symmetric, and is sometimes termed a Gaussian
   hypersphere.
   %
   The probability density is highest at the center and decreases as we move away.
   Consider however the various shells in our hypersphere and
   note the volume of these shells increases as we move away.
   Specifically, in $n$ dimensions, the volume of each shell scales with $r^{n-1}$, where $r$ is the distance
-  from the center at which the shell is located (to see this, think about the problem in spherical coordinates).
+  between the center and a particular shell (to see this, think about the problem in spherical coordinates).
   Now which shells contain the most probability mass? 
   Evidently, there is a tension between probability density and differential volume. 
   %
   Moreover, for high $n$, most of the probability mass concentrates, \textit{not} at the center,
-  but around shells neither too far, nor too close from the center.
-  To efficiently sample the posterior, we therefore want the chain to mostly explore these shells,
+  but around shells neither too far, nor too close to the center.
+  To efficiently sample from the target density, we therefore want the chain to mostly explore these shells,
   which constitute the typical set.
   That is we want to simulate trajectories along certain \textit{orbits}.
-  This is exactlt what the mathematics of Hamiltonian mechanics allow us to compute!
-
+  This behavior is mathematically captured by Hamiltonian mechanics, if we treat the probability
+  density as a physical potential -- for instance a gravitational field.
+  In this particular example,
+  the chain can then be thought of as a planet, under the gravitational influence of a star.
+  
+  This discussion helps us develop an intuition, or at least appreciate the richness of the algorithm at hand.
+  Inevitably, it also raises many questions.
+  Readers who wish to further their understanding of the discussed algorithm 
+  are vividly encouraged to read Betancourt's conceptual introduction to HMC \cite{Betancourt:2017}.
+  
 %  Under these circumstances, the chain takes ``bigger steps'' when the posterior density increases, 
 %  but smaller ones when it moves towards regions of lower probability density. This results in several
 %  desirable properties, that allow the chain to efficiently explore the \textit{typical set}, i.e the region 
@@ -239,6 +247,7 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
 %  The latter phenomenon is termed \textit{concentration of measure} and becomes extremely acute
 %  as we get to high dimensions.
   
+  Let us now work out a few practical matters.
   When applying Hamilton's equations to our MCMC problem, we can show the $j^{th}$ 
   component of the chain's momentum, $p$, varies as the negative partial derivative of 
   the potential with respect to the position in the parameter space, $\theta$:
@@ -307,7 +316,7 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
     Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm}
   ]
   % Nodes
-  \node[Round, label=right:{\textcolor{charlesBlue}{$z$}}] (v5) at(-3, -4.5) {$+$};
+  \node[Round, label=right:{$z$}] (v5) at(-3, -4.5) {$+$};
   \node[Round] (v4) at(-1.5, -6) {Pow};
   \node (v3) at(0, -6) {\textcolor{gray}{$2$}};
   \node[Round] (v2) at(0, -7.5) {$y$};
@@ -329,8 +338,10 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
   %
   Let $q \in \mathbb{R}^n$ be parameters and $x \in \mathbb{R}^k$ fixed data. 
   For AD to work, a function in \texttt{Stan}, $f: \mathbb{R}^{n + k} \mapsto \mathbb{R}^m$, 
-  must compute the output, $f(q, x)$, and the $n \times m$ Jacobian matrix, $J$, 
-  where $J_{ij} = \partial f_i / \partial q_j$.
+  must compute the output, $f(q, x)$, and the $n \times m$ partial Jacobian matrix, $J$, 
+  where $J_{ij} = \partial f_i / \partial q_j$. That is, we need all the partial derivatives of
+  the output with respect to the parameters -- or more precisely, with respect to inputs
+  which depend on model parameters.
   %
   This can be done in two ways: either we explicitly code a method to compute $J$,
   in which case our function behaves as a node on the expression graph;
@@ -359,7 +370,7 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
  
  \section{Ordinary differential equations in pharmacometrics}
   
-  The section is, in part, adapted from a presentation we gave at the 2017 Stan 
+  This section is, in part, adapted from a presentation we gave at the 2017 Stan 
   Conference on \textit{Differential Equation Based Models in Stan} \cite{Margossian:2017}.
   
   ODEs are a powerful tool to describe physical and biological processes.
@@ -383,7 +394,7 @@ remarks in \textit{Pharmacology and Pharmacokinetics}, \\ \cite{Teorell:1974}}.
   observe that the more gas in the container, the higher the leakage. This statement can be 
   written as the differential equation:
   %
-  $$ \frac{dy}{dt} = -ky(t)$$
+  $$ \frac{\mathrm dy}{\mathrm dt} = -ky(t)$$
   %
   where $y$ is the amount of gas in the container and $k$ is a positive constant. Note
   that $y' = \mathrm{d}y/\mathrm{d}t$ is an acceptable notation.
@@ -561,7 +572,7 @@ The bolus dosing event introduces a discontinuity with respect to time (figure~\
 As we will discuss in a moment, this can lead to issues.
 
 Alternatively, a drug may be administered via infusion.
-Users code for an infusion by setting a non-zero rate. For example,  \\
+Users code for an infusion by setting a non-zero rate. For example, 
 \hbox{\texttt{\{AMT = 1200, RATE = 150, ...\}}} corresponds to an infusion of 150 unit mass per unit
 time that will last 8 unit time (leading to a total of 1200 unit mass being administered). \texttt{Torsten} handles
 this scenario by creating a new event at the end of the infusion time. For all events between the
@@ -575,7 +586,7 @@ $R$. Letting $\tau$ be the beginning, and $\delta$ the end of the infusion time,
   \end{aligned}
 \end{eqnarray}
 %
-Note the upper-bound of the integral, $\delta = m / R$, can be a latent parameter if either $m$ or
+Note the upper-bound of the integral, $\delta = m / R$, can be a parameter dependent if either $m$ or
 $R$ is a parameter. In other words, we may need to compute $\partial y / \partial \delta$. This will
 be relevant to our discussion on numerical integrators.
 
@@ -605,7 +616,7 @@ This problem arises, for example, when the modeler tries to estimate \textit{lag
 We still need to characterize how important the resulting error is\footnote{see issue \#3 on 
 \url{github.com/metrumresearchgroup/math/issues/3}.}. We tested the computation of the Jacobian matrix
 with AD. 
-As expected, the derivative is not properly evaluated  at events which occur \underline{exactly} at the time 
+As expected, the derivative is not properly evaluated  at events that occur \underline{exactly} at the time 
 of a dosing, lag time accounted for.
 To be more precise, the derivatives are ill-defined, and can at best be characterized by
 looking at two one sided limits.
@@ -613,7 +624,7 @@ The main concern here is then not the value that AD returns, but the fact that i
 does not identify the derivative as being ill-posed and return an error message to that effect.
 In that sense, AD is not robust.
 
-But back to our problem in pharmacometrics: lag times are continuous variables, therefore 
+But back to our problem in pharmacometrics: lag times are usually continuous variables, therefore 
 a scenario in which an event occurs exactly at the time of the dosing  is unlikely
 (in many settings, such a scenario has in fact a probability 0). 
 %
@@ -621,8 +632,9 @@ Our test further reveals the Jacobian matrix at other events is properly
 evaluated\footnote{There may still be issues with numerical solvers. This has not yet been tested for.}.
 An additional mitigating factor is that we usually do not make measurements on the absorption
 compartment but on central compartments. 
-In such compartments, the change in drug mass is not instantaneous.
-They introduce a discontinuity in derivatives, but this is not an issue.
+In such compartments, the change in drug mass is not instantaneous,
+and the continuity of the distribution is preserved.
+Note HMC works on distributions with discontinuous derivatives.
 
 
 
@@ -646,9 +658,11 @@ $t_\mathrm{lag}$ alters the dosing time, $t$. \ \\
 \begin{center}
   \begin{tabular}{l l}
   \rowcolor[gray]{0.95} \textbf{Model Parameter} & \textbf{Latent Parameter(s)} \\
-    $F$ & $R$ (non-steady state case) \\
-         &  $m$  (steady state case) \\ 
-  \rowcolor[gray]{0.95} $t_\mathrm{lag}$ & $t$ \\
+   $\theta$ & none \\
+ \rowcolor[gray]{0.95}  $F$ & $R$ (non-steady state case) \\
+  \rowcolor[gray]{0.95}       &  $m$  (steady state case) \\ 
+   $t_\mathrm{lag}$ & $t$ \\
+  
   \end{tabular} \\
 \end{center}
 
@@ -660,7 +674,7 @@ the gradient of the log posterior). We therefore need to solve differential equa
 derivatives through them.
 %
 This means computing the Jacobian matrix of the solutions with
-respect to the parameters. In \texttt{Torsten}, this tasks is carried out by the \textit{pred} functors,
+respect to the parameter dependent inputs. In \texttt{Torsten}, this tasks is carried out by the \textit{pred} functors,
 which act as the \textit{evolution operators} (they compute the evolution of the system from
 one state to the other between two events).
 
@@ -693,7 +707,6 @@ by the convergent power series:
 \end{eqnarray}
 %
 Looking at this definition, we clearly see the derivative of $e^{tK}$ is $Ke^{tK}$.
-In practice, it is not feasible to compute an infinite number of terms.
 
 There exist several methods to compute the matrix exponential.
 \cite{MolerAndVanLoan:2003} provide an excellent and detailed review.
@@ -766,25 +779,25 @@ by $m$.
 All in all, this a rather nasty looking equation, with several tuning parameters, such as the choice
 of $p$, $q$, and $m$. Theoretical considerations can help us make an informed decision.
 Fortunately, there exist several packages which already implement this algorithm.
-The \texttt{C++} library \texttt{Eigen} \cite{Eigen:2013} contains an unsupported routine to compute
+The \texttt{C++} matrix library \texttt{Eigen} \cite{Eigen:2013} contains an unsupported routine to compute
 the matrix exponential, using the above described method.
 It is readily available to \texttt{Stan}, which extensively uses other components of \texttt{Eigen}.
-It would be to look at other routines, such as the one implemented in the package \texttt{Expokit} \cite{Sidje:1998}.
+It would be good to consider other routines, such as the one implemented in the package \texttt{Expokit} \cite{Sidje:1998}.
 Tests revealed \texttt{Eigen} usually computes 13 terms in the Pad\'e series,
 whereas \texttt{Expokit} typically computes 6, yielding less precise results but faster computation.
 For our goals, 6 terms may already provide us with all the accuracy we need.
-More generally, the ideal number of terms depends on the matrix.
+In general, the ideal number of terms depends on the matrix.
 
-Once we have selected a method to calculating the matrix exponential,
-we need to propagate derivatives by computing the derivatives of the output with respect to
-the parameter-dependent inputs. This amounts to constructing a Jacobian matrix or tensor.
+Once we have selected a method to calculate the matrix exponential,
+we need to propagate derivatives. This amounts to constructing a Jacobian matrix or tensor.
 There are clever ways of doing this, but for \texttt{matrix\_exp()} we can actually get away
 with brute force AD.
 Indeed, while equation~\ref{eq:pade} looks rather intricate, it only involves basic operations
 which can be sorted into an expression graph.
 For a basic implementation, it therefore suffices to overload \texttt{Eigen}'s routine, such that
 it can handle \texttt{var} types.
-A word a caution though: in other cases, brute-forcing AD through a numerical method can
+
+A word a caution: in other cases, brute-forcing AD through a numerical method can
 fail spectacularly, yielding unstable and inefficient code.
 Two examples are numerical ODE integrators and numerical algebraic solvers.
 Furthermore, analytical or semi-analytical gradients tend to produce more efficient code.
@@ -849,9 +862,9 @@ We first need to identify inputs which may depend on model parameters.
 These can be:
 %
 \begin{enumerate}
-  \item certain coefficients in the ODEs, $\theta$
-  \item initial states, $y^0$
-  \item time points, $t$
+  \item certain coefficients in the ODEs, $\theta \in \mathbb R^p$
+  \item initial states, $y^0 \in \mathbb R^n$
+  \item time points, $t \in \mathbb R^k$
 \end{enumerate}
 %
 Correspondingly, we need to construct the Jacobian matrix
@@ -896,7 +909,7 @@ The resulting \textit{coupled} ODE system is
     & ... & \\
 \end{eqnarray*}
 %
-By solving this system, we simultaneously produce the desired solution \textit{and} the needed derivatives!
+By solving this system, we simultaneously produce the desired solution \textit{and} the needed derivatives.
 Note further that writing this system does not require an analytical form for $J_{nm}$,
 but for
 %
@@ -905,8 +918,8 @@ but for
      & = &  \frac{\partial}{\partial \alpha_j} \frac{\mathrm d}{\mathrm dt} y_i
 \end{eqnarray*}
 %
-Intuitively, we may assume that since $\frac{\mathrm d}{\mathrm dt} y_i$ is known, we can analytically
-work out the derivative of the solution with respect to $\alpha_i$.
+Intuitively, we may assume that since $\frac{\mathrm d}{\mathrm dt} y_i$ is known, we can efficiently compute
+the derivative of the solution with respect to $\alpha_i$, using AD.
 This requires some algebra; details can be found in section 13 of \cite{Carpenter:2015}.
 
 An analysis of the augmented system shows the computational cost scales up significantly 
@@ -925,7 +938,8 @@ In Stan, the functor which defines an ODE system, must observe a strict signatur
                    } \\ \\
 %
 This strict signature requires some careful bookkeeping, as we need to sort out which 
-variables are parameters or fixed data. As we saw in section~\ref{modelParms}, it
+variables depend on model parameters and which ones are fixed data. 
+As we saw in section~\ref{modelParms}, it
 may not be immediately obvious if a variable is a latent parameter.
 
 \subsection{Mixed solvers: combining analytical and numerical solutions}
@@ -946,14 +960,19 @@ numerically integrate a \textit{reduced system} to find $y_2$. This requires we 
 terms of the solution $y_1$ -- often a relatively complex expression -- rather than as an 
 expression of the (more simple) derivative $y_1'$. 
 
-The mixed solver thus presents a trade-off: it increases the complexity of the integrant 
-but reduces the number of states we integrate numerically. We conjecture the benefit usually outweights 
-the cost, particularly with AD. The gain in efficiency varies on a case-by-case 
-basis. For the example of a Friberg-Karlsson model, the average speed-up is $49 \pm 14 \%$
- \cite{Margossian:2017b}.
+The mixed solver thus presents a trade-off: it increases the complexity of the integrand 
+but reduces the number of states we integrate numerically. We conjecture the benefit usually outweighs 
+the cost, particularly with AD. 
+Calculating the exact trade-off requires a problem specific analysis, and the development of a more
+general theory is on-going work.
+%
+Moreover, the gain in efficiency varies on a case-by-case basis.
+For a system where the pharmacokinetics is described by a two compartment model,
+and the pharmacodynamics by a Friberg-Karlsson model \cite{Friberg:2002}, 
+the average speed-up is $49 \pm 14 \%$  \cite{Margossian:2017b}.
 
 A proper implementation of the mixed solver requires a hand-coded closed-form solution for $y_1$ 
-and some careful bookkeeping. In \texttt{Torsten}, we take advantage of the built-in solution for the one and 
+and some careful bookkeeping. In \texttt{Torsten}, we take advantage of the built-in solutions for the one and 
 two compartment models. The user is required
 to specify which PK forcing function he or she wishes to use and codes the reduced system. 
 \texttt{Torsten} then follows the following coding scheme: \\ \\
@@ -961,10 +980,10 @@ to specify which PK forcing function he or she wishes to use and codes the reduc
 \texttt{y\_1 = f\_1; \\
 y\_2 = integrate(f\_2); \\
 return y = \{y\_1, y\_2\}; \\
-  } \\ \\
+  } \\
 %
 where \texttt{f\_1} is the analytical solution and \texttt{f\_2} a \texttt{C++} functor which wraps the reduced
-system the user passes to the \texttt{Torsten} function and observes the strict signature required by Stan's
+system the user passes to the \texttt{Torsten} function and observes the strict signature required by \texttt{Stan}'s
 built-in integrators. For the case of a One Compartment model forcing function, the wrapper follows 
 the following coding scheme: \\ \\
 %
@@ -998,13 +1017,19 @@ where \texttt{\textcolor{red}{f0}} is the reduced system the user provides. The 
 system accepts an additional argument, which allows us to pass the analytical solution \texttt{y\_pk}. 
 \texttt{Torsten} takes care of the following bookkeeping tasks under the hood:
 \begin{itemize}
-  \item augmenting the array of parameters, \texttt{theta}, with the initial conditions for the forcing function.
-  \item augmenting the array of data, \texttt{x\_r} with the initial time, so that the evolution operator
-  for the forcing function, \texttt{fOneCpt}, knows between which times to evolve the forcing system.
+  \item augment the array of parameters, \texttt{theta}, with the initial conditions for the forcing function.
+  \item augment the array of data, \texttt{x\_r} with the initial time, so that the evolution operator
+  for the forcing function, \texttt{fOneCpt}, knows between which times to evolve the forcing system
+  (Note: if the initial time depends on model parameters, it must be stored inside \texttt{theta}).
 \end{itemize}
 %
 These considerations extend to the case of a Two Compartment forcing function. We need to apply 
-similar thinking when we deal with non-zero rates and steady state solutions.
+similar thinking when we deal with non-zero rates.
+
+Furthermore, \texttt{Torsten} uses mixed solving when numerically solving algebraic
+equations to compute steady states (section~\ref{steadyStates}).
+The exact same principle applies, provided we have an analytical solution for the steady state
+of the forcing function (which we do for the one and two compartment models).
 
 \subsection{Rates}
 
@@ -1032,13 +1057,13 @@ For the numerical case, the function which gets passed to the integrator is modi
  $R$ to the returned vector. If $R$ is an array of fixed data, \texttt{rate} gets passed using the argument
  \texttt{x\_r}.
 
-If $R$ is an array of parameters, we the parameter augment \texttt{theta}. Unfortunately, \texttt{Torsten} currently has 
+If $R$ is an array of parameters, we augment \texttt{theta}. Unfortunately, \texttt{Torsten} currently has 
 no mechanism to separate data and parameters within $R$. Often times, only the rate in the dosing
 compartment is a parameter, while the others are fixed (and zero, for that matter). This means we 
 pass more parameters to the ODE  than necessary. This implementation is ``safe'' and does not place
 restrictions on the arguments the user passes to a \texttt{Torsten} function -- but it creates inefficiencies.
 
-\subsection{Computing steady state solutions}
+\subsection{Computing steady state solutions} \label{steadyStates}
 
 This section is in part adapted from \cite{Margossian:2018}, and a 
 presentation we gave at the Stan Con 2018, in Asilomar, California.
@@ -1088,10 +1113,10 @@ There is therefore interest in expanding the number tools available to solve alg
 notably by incorporating less robust but faster methods such as Newton's solver.
 
 Solving any algebraic equation can be turned into a root-finding problem. That is we want
-to solve $f(x^*, \theta) = 0$ for $x^* \in \mathbb{R}^N$ in the neighborhood of some starting 
-point $x \in \mathbb{R}^N$, which often corresponds to an initial guess for the solution. Note we
+to solve $f(x^*, \theta) = 0$ for $x^* \in \mathbb{R}^n$ in the neighborhood of some starting 
+point $x \in \mathbb{R}^n$, which often corresponds to an initial guess for the solution. Note we
 made $f$ explicitly dependent on the model parameters which appear in the algebraic
-equation, $\theta \in \mathbb{R}^K$.
+equation, $\theta \in \mathbb{R}^p$.
 
 As always, we need to compute the Jacobian matrix of the outputs with respect to the input
 parameters $\theta$. Because the algebraic solver is an iterative algorithm,
@@ -1120,7 +1145,7 @@ and
 \begin{eqnarray*}
 J_\theta = \frac{\partial f}{\partial \theta} (x, \theta),
 \end{eqnarray*}
-
+%
 then the Jacobian of the roots is given by
 %
 \begin{eqnarray*}
@@ -1133,9 +1158,9 @@ The Jacobians $J_x$ and $J_\theta$ can be computed with AD,
 given the expression for $f$ is known, and \texttt{Stan} provides a method for matrix division. 
 
 The invertibility condition for $J_x$ places restrictions on the structure of the
-original problem. In particular, recall $X = \mathbb{R}^N$ and $\Theta = \mathbb{R}^K$,
-and let $Y = \mathbb{R}^M$. Then $J_x$ is a $M \times N$ matrix and is invertible
-if and only if $M = N$. In other words, we need as many unknowns as equations in our
+original problem. In particular, recall $X = \mathbb{R}^n$ and $\Theta = \mathbb{R}^p$,
+and let $Y = \mathbb{R}^m$. Then $J_x$ is a $m \times n$ matrix and is invertible
+if and only if $m = n$. In other words, we need as many unknowns as equations in our
 algebraic system. Even then, $J_x$ can become singular if the roots are not uniquely
 defined and other pathologies occur. For additional details, see chapter 17 of the \textit{Stan Book}.
 
